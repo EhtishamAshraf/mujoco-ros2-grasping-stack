@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+
+<!-- Main xacro file for the complete system -->
+
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="ur5e">
+
+    <xacro:arg name="initial_positions_file" default="initial_positions.yaml" />
+
+    <xacro:include filename="$(find ur5e_mujoco_description)/urdf/ur.urdf.xacro" />
+
+    <xacro:include filename="ur5e.ros2_control.xacro" />
+
+    <xacro:ur5e_ros2_control name="MujocoSystemArm" initial_positions_file="$(arg initial_positions_file)"/>
+
+</robot>
