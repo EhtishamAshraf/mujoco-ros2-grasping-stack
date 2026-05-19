@@ -1,5 +1,5 @@
 # MuJoCo ROS2 Grasping Stack
-This repo implements a robotic manipulation system for pick-and-place tasks using the UR5e robotic arm and the RH8D dexterous hand. The system is built on top of ROS 2 for control, MoveIt for motion planning, and MuJoCo for physics simulation.
+This repo implements a robotic manipulation system for pick-and-place tasks using the UR5e robotic arm and the RH8D dexterous hand. The system is built on top of ROS 2 for control, MoveIt for motion planning, and MuJoCo for physics 
 
 **Key Features:**
 1. RH8D Hand is controlled using ROS2 Control as discussed [here](https://github.com/EhtishamAshraf/rh8d_mujoco_ros2_control.git)
