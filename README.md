@@ -224,8 +224,13 @@ ros2 control list_controllers
 ```
 
 Start the RH8D hand server:
+For left hand:
 ```bash
 ros2 run rh8d_mujoco_control rh8dL_service_controller
+```
+For right hand:
+```bash
+ros2 run rh8d_mujoco_control rh8dR_service_controller
 ```
 
 Demo video:
