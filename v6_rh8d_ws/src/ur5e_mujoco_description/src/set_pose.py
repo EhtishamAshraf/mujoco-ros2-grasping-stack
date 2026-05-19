@@ -4,7 +4,7 @@
 The purpose of this code is to open the simulation with a specific pose to make use of the MuJoCo GUI to monitor the "Joint angles for the RH8D Hand".
 
 Run the code:
-    python3 set_pose.py --scene /home/ehtisham/Desktop/Robotics_uclv/03_PROJECTS/P1_rh8d_sim/2-MuJoCo/v6_rh8d_ws/src/ur5e_mujoco_description/mjcf/ur5e_rh8d_scene.xml
+    python3 set_pose.py --scene /home/ehtisham/Desktop/Robotics_uclv/03_PROJECTS/P1_rh8d_sim/2-MuJoCo/ros2_control_moveit/v6_rh8d_ws/src/ur5e_mujoco_description/mjcf/ur5e_rh8d_scene.xml
 
 """
 
