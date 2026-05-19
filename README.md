@@ -1,164 +1,193 @@
-# RH8D Hand Simulation (ROS 2 + MuJoCo)
+# MuJoCo ROS2 Grasping Stack
+This repo implements a robotic manipulation system for pick-and-place tasks using the UR5e robotic arm and the RH8D dexterous hand. The system is built on top of ROS 2 for control, MoveIt for motion planning, and MuJoCo for physics simulation.
 
-This project simulates the **RH8D tendon-driven robotic hand** using **MuJoCo** and **ROS 2**. The simulation is controlled directly through a ROS 2 node that:
+**Key Features:**
+1. RH8D Hand is controlled using ROS2 Control as discussed [here](https://github.com/EhtishamAshraf/rh8d_mujoco_ros2_control.git)
+2. MoveIT2 is used for Cartesian and Joint-space motion planning for the UR5e arm.
+3. The robot performs both prehensile and non-prehensile manipulation. 
+   - The prehensile part involves grasping and picking an object. 
+   - While the non-prehensile part involves pushing the object into its holder without grasping it.
 
-1. Loads the MuJoCo MJCF model.
-2. Opens the MuJoCo viewer.
-3. Subscribes to hand command messages.
-4. Writes commands directly to MuJoCo actuators.
-5. Publishes joint states, tendon states, fingertip forces, and contact status.
+Demo video:
+[![Demo Video](https://github.com/EhtishamAshraf/rh8d_mujoco_moveit/blob/807a051345c3ef23b82524161a6e87bc0f99fd67/assets/1-Images/19.png)](https://www.youtube.com/watch?v=nCMynrwSZQo)
 
-The main advantage of using MuJoCo is that it supports **native spatial tendon modeling**, which is more suitable for simulating the tendon-driven RH8D hand than Gazebo mimic-joint approximation.
+---
 
-Tested on:
+## Repository Branches
+
+This repository is organized into separate branches for the two RH8D hand configurations and UR5e. One branch contains the **left-hand attached to the ur5e arm**, while the other branch contains the **right-hand attached to the ur5e arm**. 
+
+Demo video:
+[![Demo Video](https://github.com/EhtishamAshraf/rh8d_mujoco_moveit/blob/807a051345c3ef23b82524161a6e87bc0f99fd67/assets/1-Images/25.png)](https://www.youtube.com/watch?v=QCvs2jvzyD4)
+
+---
+
+## Project-Specific Modifications to the `mujoco_ros2_control` Plugin
+
+The original [`mujoco_ros2_control plugin`](https://github.com/moveit/mujoco_ros2_control) was modified for the RH8D tendon-driven hand simulation. The main modifications are:
+
+- Added support for the custom `mujoco_actuator` parameter to map a ROS 2 Control joint name to a MuJoCo actuator name.
+
+- Added support for tendon-driven finger control, where a ROS 2 Control command can be sent to a MuJoCo tendon actuator instead of directly commanding every finger joint.
+
+- Added separate URDF joint state export so real movable finger joints can be exposed as ROS 2 Control state interfaces, including position, velocity, and effort, and published through `joint_state_broadcaster` to `/joint_states`.
+
+- Added support to modify the starting position of the UR5e robotic arm.
+
+- Added support for the palm rangefinder sensor:
+
+- Added support for RH8D fingertip force sensors:
+
+---
+
+**MuJoCo Actuator Mapping**
+
+The RH8D hand is tendon-driven in MuJoCo. Therefore, some ROS 2 Control joints should not be written directly as MuJoCo joints. Instead, their commands must be sent to MuJoCo position/tendon actuators. A custom parameter called `mujoco_actuator` is added to map a ROS 2 Control joint/interface name to the actual MuJoCo actuator name.
+
+Example:
+
+```xml
+<joint name="Index_Proximal--palm_assembly:1">
+  <param name="mujoco_actuator">pos_index_tendon</param>
+  <command_interface name="position" min="0.0" max="1.5708"/>
+  <state_interface name="position"/>
+  <state_interface name="effort"/>
+</joint>
+```
+
+This means:
+
+```text
+ROS 2 Control command: "Index_Proximal--palm_assembly:1/position" is internally written to MuJoCo actuator: "pos_index_tendon"
+```
+
+**First Finger Joint Added to ros2_control**
+
+For each tendon-driven finger, only the first/proximal joint is added as the ROS 2 Control command handle. For example, the index finger has these physical joints:
+
+```text
+Index_Proximal--palm_assembly:1
+Index_Middle--Index_Proximal
+Index_Distal--Index_Middle
+```
+
+But in MuJoCo, the full index finger is driven by one tendon actuator:
+
+```text
+pos_index_tendon
+```
+
+Therefore, only this entry is needed in ros2_control:
+
+```xml
+<joint name="Index_Proximal--palm_assembly:1">
+  <param name="mujoco_actuator">pos_index_tendon</param>
+  <command_interface name="position" min="0.0" max="1.5708"/>
+  <state_interface name="position"/>
+  <state_interface name="effort"/>
+</joint>
+```
+
+The middle and distal joints are not added as separate command interfaces because they are not independently actuated.
+
+**URDF Joint State Export**
+
+The plugin also exports all real movable URDF joints as state interfaces. This is important because the controller may command only a tendon actuator, but MuJoCo moves several real joints.
+
+Example:
+
+```text
+Commanded actuator:
+pos_index_tendon
+
+Actual moving joints:
+Index_Proximal--palm_assembly:1
+Index_Middle--Index_Proximal
+Index_Distal--Index_Middle
+```
+
+This allows:
+
+- `joint_state_broadcaster`
+- `robot_state_publisher`
+- RViz
+
+to visualize the real finger motion.
+
+**Fingertip Force Sensor Support**
+
+The plugin supports RH8D fingertip force sensors. Each fingertip force sensor is exposed as a 3D vector:
+
+```text
+index_tip_force/x
+index_tip_force/y
+index_tip_force/z
+```
+
+**Palm Range Sensor Support**
+
+The plugin supports the palm rangefinder sensor. It is exposed as:
+
+```text
+palm_range/value
+```
+
+---
+
+## System Dependencies and Setup
+
+**Tested on:**
 
 - ROS 2 Humble
 - MuJoCo
+- ros2_control
+- MoveIT2
+- Modified mujoco_ros2_control plugin
 
-Demo video:
-[![Demo Video](https://github.com/EhtishamAshraf/rh8d_mujoco_ros2/blob/42d79a12e8eb45b62df5007362b32549ec2f6697/assets/ros2_cylinder.png)](https://youtu.be/hQMjRyygGjY)
+**The workspace currently depends on:**
 
----
+- MuJoCo 3.8.0
+- GLFW3
+- GLEW
+- OpenGL / Mesa
+- NLOpt
+- NLOpt C++ headers: `nlopt.hpp`
 
-## Build and Launch Instructions
-
-Go to the workspace. Build the packages:
-
-```bash
-colcon build
-```
-
-Source the workspace:
-
-```bash
-source install/setup.bash
-```
-Run the nodes:
-```bash
-ros2 run rh8d_mujoco_sim rh8d_mujoco_node --ros-args -p model_path:=/home/ehtisham/Desktop/Robotics_uclv/03_PROJECTS/P1_rh8d_sim/2-MuJoCo/ros2/v2_rh8d_ws/src/rh8d_mujoco_sim/assets/mjcf/scene.xml
-
-```
+Before building the workspace, install the required system dependencies and configure MuJoCo.
 
 ```bash
-ros2 run rh8d_mujoco_sim rh8d_hand_test
+sudo apt update
+sudo apt install -y \
+  libglfw3-dev \
+  libglew-dev \
+  libgl1-mesa-dev \
+  libnlopt-dev \
+  libnlopt-cxx-dev
+```
+
+These packages provide the required OpenGL, GLFW, GLEW, and NLOpt dependencies used by the MuJoCo + ROS 2 Control workspace.
+
+**Environment Variables:**
+
+Add the following lines to `~/.bashrc`:
+
+```bash
+# MuJoCo
+export MUJOCO_HOME=$HOME/.mujoco/mujoco-3.8.0
+export MUJOCO_DIR=$MUJOCO_HOME
+export MJ_PATH=$MUJOCO_HOME
+export LD_LIBRARY_PATH=$MUJOCO_HOME/lib:$LD_LIBRARY_PATH
+export CMAKE_PREFIX_PATH=$MUJOCO_HOME:$CMAKE_PREFIX_PATH
+export PATH=$MUJOCO_HOME/bin:$PATH
+```
+
+Reload the terminal configuration:
+
+```bash
+source ~/.bashrc
 ```
 
 ---
-
-## MuJoCo Model
-
-The hand model is defined using an MJCF XML file:
-
-```text
-assets/mjcf/scene.xml
-```
-
-The model contains:
-
-- RH8D hand body structure
-- STL visual meshes
-- Collision geoms
-- Revolute joints
-- Spatial tendons
-- Tendon actuators
-- Tendon position sensors
-- Actuator force sensors
-- Palm rangefinder sensor
-- Fingertip force sensors
-- Contact exclusions
-
-In the MJCF file, the mesh directory is defined as below. The mesh folder must be located relative to the MJCF file.
-
-```xml
-<compiler angle="radian" meshdir="../meshes"/>
-```
-
-#### Tendon Modeling
-
-The RH8D hand is tendon-driven. In MuJoCo, this is modeled using **spatial tendons**. This is more physically meaningful than the Gazebo version, where tendon behavior had to be approximated using mimic joints.
-
-```xml
-<tendon>
-  <spatial name="idx_flex_spatial">
-    <site site="palm_flexor_origin_idx"/>
-    <site site="idx_guide_p"/>
-    <site site="idx_guide_m"/>
-    <site site="idx_guide_d"/>
-    <site site="idx_anchor"/>
-  </spatial>
-</tendon>
-```
-
-The ring and small fingers are coupled using a MuJoCo equality constraint. This means the small finger tendon follows the ring finger tendon.
-
-```xml
-<equality>
-  <tendon tendon1="sml_flex_spatial" tendon2="ring_flex_spatial"
-          polycoef="0 1 0 0 0"
-          solref="0.08 1.0"
-          solimp="0.90 0.99 0.002"/>
-</equality>
-```
-
----
-
-## ROS 2 Nodes
-
-This project contains two main ROS 2 nodes.
-
----
-
-#### 1. RH8D MuJoCo Simulation Node
-
-Main responsibility:
-
-- Load the MJCF model.
-- Start the MuJoCo passive viewer.
-- Subscribe to hand commands.
-- Write commands directly to MuJoCo actuators.
-- Step the MuJoCo simulation.
-- Publish hand state.
-- Publish fingertip forces.
-- Publish contact status.
-
-#### 2. RH8D Gesture / Object Pick Controller
-
-Main responsibility:
-
-- Publish gesture commands to `/rh8d/command`.
-- Subscribe to `/rh8d/state`.
-- Subscribe to `/rh8d/contacts`.
-- Detect object presence using the palm range sensor.
-- Close the hand only when an object is detected.
-- Detect stable fingertip contacts.
-- Latch tendon commands after grasp contact.
-- Execute a predefined gesture sequence.
-
-#### Flow of the controller
-
-The controller does not immediately close the hand. Before closing, it checks whether an object is detected by the palm rangefinder. If the object is not detected, the hand stays open.
-
-```python
-range_threshold = 0.25
-```
-
-During the hand close gesture, the controller monitors fingertip contacts. Stable contact is required for multiple control cycles:
-
-```python
-required_contact_cycles = 5
-```
-
-The MuJoCo simulation node detects contact using fingertip force sensors. Contact is considered true when the Z-force magnitude is greater than:
-
-```python
-contact_threshold = 0.50
-```
-
-After stable grasp contact is detected, the controller latches the current tendon values. This prevents the hand from continuing to close after the object is already grasped.
-
----
-
-
 
 ### Known Issue: RViz / MoveIt locale-related parameter parsing
 
@@ -174,3 +203,45 @@ Set the numeric locale to use `.` as the decimal separator before launching:
 
 Add the following command in the ~/.bashrc and source the ~/.bashrc
 export LC_NUMERIC=en_US.UTF-8
+
+---
+
+## Build and Launch Instructions
+
+Go to the workspace. Build the packages:
+```bash
+colcon build
+```
+
+Source the workspace:
+```bash
+source install/setup.bash
+```
+
+Launch the simulation, remember to comment out the right node in the launch file:
+```bash
+ros2 launch ur5e_moveit_config ur5e_rh8d_mujoco_bringup.launch.py
+```
+
+Check active controllers:
+```bash
+ros2 control list_controllers
+```
+
+Start the RH8D hand server:
+```bash
+ros2 run rh8d_mujoco_control rh8dL_service_controller
+```
+
+Demo video:
+[![Demo Video](https://github.com/EhtishamAshraf/rh8d_mujoco_moveit/blob/807a051345c3ef23b82524161a6e87bc0f99fd67/assets/1-Images/17.png)](https://www.youtube.com/watch?v=WqfEJmus-HA)
+
+---
+
+## References
+
+1. UR5e arm: MuJoCo XML information can be found [here](https://github.com/google-deepmind/mujoco_menagerie).
+2. UR5e arm: ROS2 URDF information can be found [here](https://github.com/UniversalRobots/Universal_Robots_ROS2_Description/tree/humble).
+3. MoveIT Tutorial can be found [here](https://industrial-training-master.readthedocs.io/en/humble/_source/session3/3-Build-a-MoveIt-Package.html).
+4. Move group interface Tutorial can be found [here](https://docs.ros.org/en/indigo/api/moveit_tutorials/html/doc/pr2_tutorials/planning/src/doc/move_group_interface_tutorial.html).
+5. [TracIK](https://github.com/ravnicas/trac_ik) is used as an inverse kinematics solver, providing a faster and more reliable alternative to the standard KDL solver.
