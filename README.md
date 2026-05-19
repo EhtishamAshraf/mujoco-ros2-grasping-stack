@@ -38,8 +38,6 @@ The original [`mujoco_ros2_control plugin`](https://github.com/moveit/mujoco_ros
 
 - Added support for RH8D fingertip force sensors:
 
----
-
 **MuJoCo Actuator Mapping**
 
 The RH8D hand is tendon-driven in MuJoCo. Therefore, some ROS 2 Control joints should not be written directly as MuJoCo joints. Instead, their commands must be sent to MuJoCo position/tendon actuators. A custom parameter called `mujoco_actuator` is added to map a ROS 2 Control joint/interface name to the actual MuJoCo actuator name.
@@ -55,11 +53,8 @@ Example:
 </joint>
 ```
 
-This means:
+This means the ROS 2 Control command: "Index_Proximal--palm_assembly:1/position" is internally written to MuJoCo actuator: "pos_index_tendon"
 
-```text
-ROS 2 Control command: "Index_Proximal--palm_assembly:1/position" is internally written to MuJoCo actuator: "pos_index_tendon"
-```
 
 **First Finger Joint Added to ros2_control**
 
