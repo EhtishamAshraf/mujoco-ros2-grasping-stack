@@ -22,9 +22,6 @@
 
     <!-- Use this pose for cylinder, when robotic arm is present on the ground (no table): <body name="cylinder" pos="1.06 0.975 0.70"> --> 
     
-    
-    <!-- ????     Use this pose for cylinder, when robotic arm is present in the cylinder pose: <body name="cylinder" pos=""> --> 
-
     <!-- NOTE:
     Use this for Cartesian Planning - horizontally pushing the cylinder to it's holder: 
     <body name="cylinder" pos="0.398 -0.348 0.799"> 
