@@ -98,12 +98,12 @@ int main(int argc, const char **argv)
   mujoco_data = mj_makeData(mujoco_model);
 
   // Set desired initial UR5e joint pose in MuJoCo
-  set_joint_qpos(mujoco_model, mujoco_data, "shoulder_pan_joint", 1.5708);
-  set_joint_qpos(mujoco_model, mujoco_data, "shoulder_lift_joint", 0.0);
-  set_joint_qpos(mujoco_model, mujoco_data, "elbow_joint", 1.5708);
-  set_joint_qpos(mujoco_model, mujoco_data, "wrist_1_joint", 1.5708);
-  set_joint_qpos(mujoco_model, mujoco_data, "wrist_2_joint", 0.0);
-  set_joint_qpos(mujoco_model, mujoco_data, "wrist_3_joint", 0.0);
+  set_joint_qpos(mujoco_model, mujoco_data, "shoulder_pan_joint", 1.4927);
+  set_joint_qpos(mujoco_model, mujoco_data, "shoulder_lift_joint", -0.8678);
+  set_joint_qpos(mujoco_model, mujoco_data, "elbow_joint", -2.43);
+  set_joint_qpos(mujoco_model, mujoco_data, "wrist_1_joint", -0.6596);
+  set_joint_qpos(mujoco_model, mujoco_data, "wrist_2_joint", -0.0347);
+  set_joint_qpos(mujoco_model, mujoco_data, "wrist_3_joint", 0.05);
 
   // Recompute forward kinematics/dynamics from the new qpos
   mj_forward(mujoco_model, mujoco_data);

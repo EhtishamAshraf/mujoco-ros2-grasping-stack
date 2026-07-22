@@ -42,8 +42,16 @@ hardware_interface::return_type MujocoSystem::read(
   {
     if (joint_state.is_mujoco_actuator)
     {
+      if (joint_state.has_mujoco_joint_state)
+      {
+        joint_state.position = mj_data_->qpos[joint_state.mj_pos_adr];
+        joint_state.velocity = mj_data_->qvel[joint_state.mj_vel_adr];
+        joint_state.effort = mj_data_->qfrc_actuator[joint_state.mj_vel_adr];
+        continue;
+      }
+
       // For actuator-backed interfaces:
-      // position -> current ctrl value
+      // position -> current ctrl value, only when no matching MuJoCo joint exists
       // effort   -> actuator force
       joint_state.position = mj_data_->ctrl[joint_state.mj_actuator_id];
       joint_state.velocity = 0.0;
@@ -298,6 +306,8 @@ void MujocoSystem::register_joints(
             << joint.name << ", mapped actuator name: " << mujoco_name);
         continue;
       }
+
+      mujoco_joint_id = mj_name2id(mj_model_, mjOBJ_JOINT, joint.name.c_str());
     }
     else
     {
@@ -325,6 +335,7 @@ void MujocoSystem::register_joints(
       joint_state.mj_joint_type = mj_model_->jnt_type[mujoco_joint_id];
       joint_state.mj_pos_adr = mj_model_->jnt_qposadr[mujoco_joint_id];
       joint_state.mj_vel_adr = mj_model_->jnt_dofadr[mujoco_joint_id];
+      joint_state.has_mujoco_joint_state = true;
 
       auto urdf_joint = urdf_model.getJoint(joint_state.name);
       if (urdf_joint)
@@ -332,16 +343,20 @@ void MujocoSystem::register_joints(
         get_joint_limits(urdf_joint, joint_state.joint_limits);
       }
     }
-    else
+
+    if (mujoco_actuator_id != -1)
     {
       joint_state.is_mujoco_actuator = true;
       joint_state.mj_actuator_id = mujoco_actuator_id;
       joint_state.mj_actuator_trn_type = mj_model_->actuator_trntype[mujoco_actuator_id];
       joint_state.mj_actuator_trn_id = mj_model_->actuator_trnid[2 * mujoco_actuator_id];
 
-      joint_state.position = 0.0;
-      joint_state.velocity = 0.0;
-      joint_state.effort = 0.0;
+      if (!joint_state.has_mujoco_joint_state)
+      {
+        joint_state.position = 0.0;
+        joint_state.velocity = 0.0;
+        joint_state.effort = 0.0;
+      }
     }
 
     joint_states_.at(joint_index) = joint_state;
@@ -514,6 +529,12 @@ void MujocoSystem::register_urdf_joint_states(const urdf::Model &urdf_model)
     if (urdf_joint->type == urdf::Joint::FIXED) {
       continue;
     }
+    const auto already_registered = std::find_if(
+      joint_states_.begin(), joint_states_.end(),
+      [&urdf_joint](const JointState &state) { return state.name == urdf_joint->name; });
+    if (already_registered != joint_states_.end()) {
+      continue;
+    }
     count++;
   }
 
@@ -528,6 +549,12 @@ void MujocoSystem::register_urdf_joint_states(const urdf::Model &urdf_model)
       continue;
     }
     if (urdf_joint->type == urdf::Joint::FIXED) {
+      continue;
+    }
+    const auto already_registered = std::find_if(
+      joint_states_.begin(), joint_states_.end(),
+      [&urdf_joint](const JointState &state) { return state.name == urdf_joint->name; });
+    if (already_registered != joint_states_.end()) {
       continue;
     }
 
@@ -853,6 +880,10 @@ void MujocoSystem::set_initial_pose()
     if (joint_state.is_mujoco_actuator)
     {
       mj_data_->ctrl[joint_state.mj_actuator_id] = joint_state.position;
+      if (joint_state.has_mujoco_joint_state)
+      {
+        mj_data_->qpos[joint_state.mj_pos_adr] = joint_state.position;
+      }
     }
     else
     {

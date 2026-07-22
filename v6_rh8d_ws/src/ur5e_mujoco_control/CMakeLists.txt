@@ -44,6 +44,7 @@ set(COMMON_DEPS
 add_executable(gestures src/gestures.cpp)
 add_executable(cartesian_pickNplace src/cartesian_pickNplace.cpp)
 add_executable(object_pickNplace src/object_pickNplace.cpp)
+add_executable(object_pick src/object_pick.cpp)
 
 ament_target_dependencies(gestures
   ${COMMON_DEPS}
@@ -54,11 +55,15 @@ ament_target_dependencies(cartesian_pickNplace
 ament_target_dependencies(object_pickNplace
   ${COMMON_DEPS}
 )
+ament_target_dependencies(object_pick
+  ${COMMON_DEPS}
+)
 
 install(TARGETS
   gestures
   cartesian_pickNplace
   object_pickNplace
+  object_pick
   DESTINATION lib/${PROJECT_NAME}
 )
 

@@ -164,6 +164,15 @@ def generate_launch_description():
             {"use_sim_time": True}
         ],
     )
+    
+    object_pick_node = Node(
+        package="ur5e_mujoco_control",
+        executable="object_pick",
+        output="screen",
+        parameters=[
+            {"use_sim_time": True}
+        ],
+    )
 
     # Define the RViz node to visualize the robot and its state
     rviz_config_file = os.path.join(
@@ -214,7 +223,8 @@ def generate_launch_description():
             rviz_node,
             # gestures_node,
             # cartesian_pickNplace_node,
-            object_pickNplace_node,
+            # object_pickNplace_node,
+            object_pick_node,
         ]
     )
 

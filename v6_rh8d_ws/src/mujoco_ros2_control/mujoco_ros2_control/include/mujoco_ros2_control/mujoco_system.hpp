@@ -85,6 +85,7 @@ public:
 
 
     bool is_mujoco_actuator{false};
+    bool has_mujoco_joint_state{false};
     int mj_actuator_id{-1};
     int mj_actuator_trn_type{-1};
     int mj_actuator_trn_id{-1};

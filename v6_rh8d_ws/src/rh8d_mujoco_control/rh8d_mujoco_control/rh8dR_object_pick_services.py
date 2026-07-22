@@ -96,20 +96,20 @@ class RH8DHandServiceController(Node):
             'ring': 0,
             'small': 0,
         }
-        self.required_contact_cycles = 5
+        self.required_contact_cycles = 1
 
         self.range_threshold = 0.25
-        self.tip_force_threshold = 0.2 # force applied on the objects.
+        self.tip_force_threshold = 0.1 # force applied on the objects.
 
         self.rate_forearm = 0.5
         self.rate_palm_axis = 0.5
         self.rate_palm_l = 0.5
         self.rate_thumb_axis = 0.5
 
-        self.rate_thumb = 0.35
-        self.rate_index = 0.35
-        self.rate_middle = 0.35
-        self.rate_ring_small = 0.35
+        self.rate_thumb = 0.1
+        self.rate_index = 0.1
+        self.rate_middle = 0.1
+        self.rate_ring_small = 0.1
 
         # [forearm, palm_axis, palm_l, thumb_axis, thumb_meta, index, middle, ring]
         self.current_command = [0.0] * 8
@@ -476,17 +476,17 @@ class RH8DHandServiceController(Node):
                         self.get_logger().info('Object detected in grasp range')
                         self.last_object_seen_time = self.get_clock().now()
                         self.run_object_grasp()
+                    # else:
+                    #     # If we've never seen the object, or it's been gone for > 1 second
+                    #     now = self.get_clock().now()
+                    #     if self.last_object_seen_time is None:
+                    #         # Optional: Allow a small window at start to find the object
+                    #         self.finish_command(False, 'No object detected at start')
+                    #     elif (now - self.last_object_seen_time).nanoseconds > 1e9: # 1 second
+                    #         self.finish_command(False, 'Object lost during grasp')
                     else:
-                        # If we've never seen the object, or it's been gone for > 1 second
-                        now = self.get_clock().now()
-                        if self.last_object_seen_time is None:
-                            # Optional: Allow a small window at start to find the object
-                            self.finish_command(False, 'No object detected at start')
-                        elif (now - self.last_object_seen_time).nanoseconds > 1e9: # 1 second
-                            self.finish_command(False, 'Object lost during grasp')
-                        else:
-                            # Object flickered out, but keep trying for a moment
-                            self.run_object_grasp()
+                        # Object flickered out, but keep trying for a moment
+                        self.run_object_grasp()
 
         elif active_mode == 'gesture':
                 with self.state_lock:

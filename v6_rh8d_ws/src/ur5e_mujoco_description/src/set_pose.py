@@ -58,7 +58,7 @@ def main():
         "elbow_joint":         -2.43,
         "wrist_1_joint":       -0.6596,
         "wrist_2_joint":       -0.0347,
-        "wrist_3_joint":       -0.0347,
+        "wrist_3_joint":       0.126,
     }
     hand_pose = {
         "forearm:1--base:1": 0.0,
